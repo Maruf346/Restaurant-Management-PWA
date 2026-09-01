@@ -1,0 +1,10 @@
+{
+  "description": "This professional-grade PWA delivers a seamless, responsive experience for managing recipes and ingredients, featuring intuitive navigation and polished UI interactions.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
