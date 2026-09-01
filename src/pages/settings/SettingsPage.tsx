@@ -1,7 +1,8 @@
 import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import profileImg from "@/imports/Settings/55eaed062e68ceb12b6799e9aecc377c5a03f236.png";
 import Toast, { useToast } from "../../components/ui/Toast";
+
+const profileImg = "/profile-image.png";
 
 export default function SettingsPage() {
   const [isEditing, setIsEditing] = useState(false);
