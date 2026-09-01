@@ -1,17 +1,18 @@
 import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import profileImg from "@/assets/profile-image.png";
 import Toast, { useToast } from "../../components/ui/Toast";
+
+const profileImg = `${import.meta.env.BASE_URL}assets/profile-image.png`;
 
 export default function SettingsPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   const [displayName, setDisplayName] = useState("Eleanor Vance");
-  const [displayAvatar, setDisplayAvatar] = useState<string>(profileImg as unknown as string);
+  const [displayAvatar, setDisplayAvatar] = useState<string>(profileImg);
 
   const [draftName, setDraftName] = useState("Eleanor Vance");
-  const [draftAvatar, setDraftAvatar] = useState<string>(profileImg as unknown as string);
+  const [draftAvatar, setDraftAvatar] = useState<string>(profileImg);
 
   const [currentPass, setCurrentPass] = useState("");
   const [newPass, setNewPass] = useState("");
