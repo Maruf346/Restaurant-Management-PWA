@@ -1,4 +1,4 @@
-# figma-make-app
+# Restaurant-Management-PWA
 
 React + Vite + Tailwind CSS project running inside Figma Make.
 

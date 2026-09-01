@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import DatePickerDrawer from "../../components/DatePickerDrawer";
 
 type Period = "Daily" | "Weekly" | "Monthly";
 
@@ -108,6 +109,7 @@ export default function ReportsPage() {
   const [selectedDay, setSelectedDay] = useState("2023-10-24");
   const [selectedWeek, setSelectedWeek] = useState("2023-W43");
   const [selectedMonth, setSelectedMonth] = useState("2023-10");
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   const data = REPORT_DATA[period];
 
@@ -144,26 +146,16 @@ export default function ReportsPage() {
                 </button>
               ))}
             </div>
-            {/* Date picker — period-aware, overlay technique for reliable native picker */}
-            <div className="relative flex items-center bg-white border border-[#e2e8f0] rounded-[8px] pl-[32px] pr-[28px] py-[8px] text-[13px] text-[#1c1b1b] cursor-pointer shadow-[0_1px_2px_rgba(0,0,0,0.04)] whitespace-nowrap select-none overflow-hidden">
-              <svg className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none z-10" width="14" height="14" viewBox="0 0 18 20" fill="none">
+            {/* Date picker button */}
+            <button
+              onClick={() => setPickerOpen(true)}
+              className="flex items-center gap-2 bg-white border border-[#e2e8f0] rounded-[8px] px-4 py-2 text-[13px] sm:text-[14px] text-[#1c1b1b] font-medium hover:border-[#cbd5e1] transition-colors shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
+            >
+              <svg width="16" height="16" viewBox="0 0 18 20" fill="none">
                 <path d="M1 7H17M5 1V3M13 1V3M1 3C1 2.44772 1.44772 2 2 2H16C16.5523 2 17 2.44772 17 3V18C17 18.5523 16.5523 19 16 19H2C1.44772 19 1 18.5523 1 18V3Z" stroke="#5C5F61" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
-              <span className="pointer-events-none z-10 relative">{pickerLabel}</span>
-              <svg className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none z-10" width="10" height="6" viewBox="0 0 10 6" fill="none">
-                <path d="M1 1L5 5L9 1" stroke="#5C5F61" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-              <input
-                type={period === "Daily" ? "date" : period === "Weekly" ? "week" : "month"}
-                value={period === "Daily" ? selectedDay : period === "Weekly" ? selectedWeek : selectedMonth}
-                onChange={(e) => {
-                  if (period === "Daily") setSelectedDay(e.target.value);
-                  else if (period === "Weekly") setSelectedWeek(e.target.value);
-                  else setSelectedMonth(e.target.value);
-                }}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              />
-            </div>
+              <span className="whitespace-nowrap">{pickerLabel}</span>
+            </button>
           </div>
         </div>
 
@@ -303,6 +295,19 @@ export default function ReportsPage() {
           </div>
         </div>
       </div>
+
+      {/* Date Picker Drawer */}
+      <DatePickerDrawer
+        open={pickerOpen}
+        period={period}
+        selectedDate={selectedDay}
+        selectedWeek={selectedWeek}
+        selectedMonth={selectedMonth}
+        onDateChange={setSelectedDay}
+        onWeekChange={setSelectedWeek}
+        onMonthChange={setSelectedMonth}
+        onClose={() => setPickerOpen(false)}
+      />
     </div>
   );
 }
