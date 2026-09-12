@@ -12,18 +12,38 @@ const IMAGE_COLORS = [
   "#7c3aed", "#db2777", "#0891b2", "#d97706", "#0f172a",
 ];
 
+const AVAILABLE_INGREDIENTS = [
+  { id: "rice-noodles", name: "Rice Noodles", unit: "g", costPerBaseUnit: 0.08 },
+  { id: "shrimp-medium", name: "Shrimp (Medium)", unit: "kg", costPerBaseUnit: 560 },
+  { id: "tofu-firm", name: "Tofu (Firm)", unit: "g", costPerBaseUnit: 0.14 },
+  { id: "bean-sprouts", name: "Bean Sprouts", unit: "kg", costPerBaseUnit: 50 },
+  { id: "thai-basil", name: "Thai Basil", unit: "kg", costPerBaseUnit: 90 },
+  { id: "oyster-sauce", name: "Oyster Sauce", unit: "liters", costPerBaseUnit: 120 },
+  { id: "fish-sauce", name: "Fish Sauce", unit: "liters", costPerBaseUnit: 80 },
+  { id: "palm-sugar", name: "Palm Sugar", unit: "kg", costPerBaseUnit: 65 },
+  { id: "chicken-thigh", name: "Chicken Thigh", unit: "kg", costPerBaseUnit: 120 },
+  { id: "beef-patty", name: "Beef Patty", unit: "pcs", costPerBaseUnit: 65 },
+  { id: "lemongrass", name: "Lemongrass", unit: "kg", costPerBaseUnit: 120 },
+  { id: "coconut-milk", name: "Coconut Milk", unit: "liters", costPerBaseUnit: 45 },
+  { id: "lime", name: "Lime", unit: "pcs", costPerBaseUnit: 4 },
+  { id: "egg", name: "Egg", unit: "pcs", costPerBaseUnit: 4 },
+  { id: "garlic", name: "Garlic", unit: "kg", costPerBaseUnit: 70 },
+] as const;
+
 let ingCounter = 9000;
 
 interface IngredientRow {
   id: string;
+  ingredientId: string;
   name: string;
   quantity: string;
   unit: string;
   cost: string;
+  costPerBaseUnit: number;
 }
 
 function newIngredientRow(): IngredientRow {
-  return { id: `new-${++ingCounter}`, name: "", quantity: "", unit: "g", cost: "" };
+  return { id: `new-${++ingCounter}`, ingredientId: "", name: "", quantity: "1", unit: "g", cost: "0.00", costPerBaseUnit: 0 };
 }
 
 export default function AddEditProductPage() {
@@ -38,18 +58,25 @@ export default function AddEditProductPage() {
   const [name, setName] = useState(existing?.name ?? "");
   const [categoryId, setCategoryId] = useState(existing?.categoryId ?? categories[0]?.id ?? "");
   const [sellingPrice, setSellingPrice] = useState(existing?.sellingPrice?.toString() ?? "");
+  const [description, setDescription] = useState(existing?.description ?? "");
+  const [lightspeedItemId, setLightspeedItemId] = useState(existing?.lightspeedItemId ?? "");
   const [imageColor, setImageColor] = useState(existing?.imageColor ?? IMAGE_COLORS[0]);
+  const [productImageUrl, setProductImageUrl] = useState(existing?.imageUrl ?? "");
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [showIngredientDrawer, setShowIngredientDrawer] = useState(false);
+  const [activeIngredientRowId, setActiveIngredientRowId] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
   const [ingredients, setIngredients] = useState<IngredientRow[]>(
     existing?.ingredients.map((i) => ({
       id: i.id,
+      ingredientId: i.ingredientId ?? "",
       name: i.name,
       quantity: i.quantity.toString(),
       unit: i.unit,
       cost: i.cost.toString(),
+      costPerBaseUnit: i.costPerBaseUnit ?? 0,
     })) ?? [newIngredientRow()]
   );
 
@@ -58,8 +85,37 @@ export default function AddEditProductPage() {
   const projectedProfit = price - totalCost;
   const projectedMargin = price > 0 ? ((projectedProfit / price) * 100) : 0;
 
-  const updateIngredient = (id: string, field: keyof IngredientRow, value: string) => {
-    setIngredients((rows) => rows.map((r) => (r.id === id ? { ...r, [field]: value } : r)));
+  const updateIngredient = (id: string, field: keyof IngredientRow, value: string | number) => {
+    setIngredients((rows) => rows.map((r) => {
+      if (r.id !== id) return r;
+
+      const nextRow = { ...r, [field]: value } as IngredientRow;
+      if (field === "ingredientId" && typeof value === "string") {
+        const selected = AVAILABLE_INGREDIENTS.find((item) => item.id === value);
+        if (selected) {
+          return {
+            ...nextRow,
+            name: selected.name,
+            unit: selected.unit,
+            costPerBaseUnit: selected.costPerBaseUnit,
+            quantity: nextRow.quantity || "1",
+            cost: ((parseFloat(nextRow.quantity || "1") || 1) * selected.costPerBaseUnit).toFixed(2),
+          };
+        }
+      }
+
+      if (field === "quantity" && typeof value === "string" && r.ingredientId) {
+        const selected = AVAILABLE_INGREDIENTS.find((item) => item.id === r.ingredientId);
+        if (selected) {
+          return {
+            ...nextRow,
+            cost: ((parseFloat(value) || 0) * selected.costPerBaseUnit).toFixed(2),
+          };
+        }
+      }
+
+      return nextRow;
+    }));
   };
 
   const removeIngredient = (id: string) => {
@@ -70,6 +126,27 @@ export default function AddEditProductPage() {
     setIngredients((rows) => [...rows, newIngredientRow()]);
   };
 
+  const handleIngredientSelect = (rowId: string, ingredientId: string) => {
+    const selected = AVAILABLE_INGREDIENTS.find((item) => item.id === ingredientId);
+    if (!selected) return;
+
+    setIngredients((rows) => rows.map((row) => {
+      if (row.id !== rowId) return row;
+      const quantity = parseFloat(row.quantity) || 1;
+      return {
+        ...row,
+        ingredientId,
+        name: selected.name,
+        unit: selected.unit,
+        costPerBaseUnit: selected.costPerBaseUnit,
+        quantity: row.quantity || "1",
+        cost: (quantity * selected.costPerBaseUnit).toFixed(2),
+      };
+    }));
+    setShowIngredientDrawer(false);
+    setActiveIngredientRowId(null);
+  };
+
   const handleSave = () => {
     if (!name.trim()) { addToast("Please enter a dish name.", "error"); return; }
     if (!sellingPrice || parseFloat(sellingPrice) <= 0) {
@@ -78,20 +155,32 @@ export default function AddEditProductPage() {
 
     const cleanIngredients: RecipeIngredient[] = ingredients
       .filter((i) => i.name.trim())
-      .map((i) => ({
-        id: i.id,
-        name: i.name.trim(),
-        quantity: parseFloat(i.quantity) || 0,
-        unit: i.unit,
-        cost: parseFloat(i.cost) || 0,
-      }));
+      .map((i) => {
+        const selectedIngredient = AVAILABLE_INGREDIENTS.find((item) => item.id === i.ingredientId);
+        const quantity = parseFloat(i.quantity) || 0;
+        const costPerBaseUnit = selectedIngredient?.costPerBaseUnit ?? i.costPerBaseUnit ?? 0;
+        const calculatedCost = selectedIngredient ? quantity * costPerBaseUnit : (parseFloat(i.cost) || 0);
+
+        return {
+          id: i.id,
+          ingredientId: selectedIngredient?.id ?? i.ingredientId,
+          name: selectedIngredient?.name ?? i.name.trim(),
+          quantity,
+          unit: selectedIngredient?.unit ?? i.unit,
+          cost: calculatedCost,
+          costPerBaseUnit,
+        };
+      });
 
     const productData = {
       name: name.trim(),
       categoryId,
       sellingPrice: parseFloat(sellingPrice),
+      description: description.trim(),
+      lightspeedItemId: lightspeedItemId.trim(),
       ingredients: cleanIngredients,
       imageColor,
+      imageUrl: productImageUrl || undefined,
     };
 
     if (isEdit && productId) {
@@ -108,9 +197,19 @@ export default function AddEditProductPage() {
 
   const hasChanges = name !== (existing?.name ?? "") ||
     sellingPrice !== (existing?.sellingPrice?.toString() ?? "") ||
+    description !== (existing?.description ?? "") ||
+    lightspeedItemId !== (existing?.lightspeedItemId ?? "") ||
     categoryId !== (existing?.categoryId ?? categories[0]?.id ?? "");
 
   const selectedCategory = categories.find((c) => c.id === categoryId);
+
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => setProductImageUrl(String(reader.result ?? ""));
+    reader.readAsDataURL(file);
+  };
 
   return (
     <div className="min-h-full bg-[#fcf8f8]">
@@ -235,6 +334,46 @@ export default function AddEditProductPage() {
                   </div>
                 </div>
 
+                {/* Product Picture / Icon */}
+                <div className="flex flex-col gap-2">
+                  <label className="text-[#1c1b1b] text-[14px] font-semibold tracking-[0.28px]">Product Picture</label>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => document.getElementById("product-image-upload")?.click()}
+                      className="relative w-16 h-16 rounded-[12px] border border-dashed border-[#cbd5e1] bg-[#f8fafc] overflow-hidden flex items-center justify-center text-[#0f172a] hover:border-[#0f172a] transition-colors"
+                    >
+                      {productImageUrl ? (
+                        <img src={productImageUrl} alt="Product preview" className="w-full h-full object-cover" />
+                      ) : (
+                        <div
+                          className="w-full h-full flex items-center justify-center text-[22px] font-bold text-white"
+                          style={{ backgroundColor: imageColor }}
+                        >
+                          {name.trim().charAt(0).toUpperCase() || "P"}
+                        </div>
+                      )}
+                    </button>
+                    <div className="flex flex-col gap-1">
+                      <input id="product-image-upload" type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                      <button
+                        type="button"
+                        onClick={() => document.getElementById("product-image-upload")?.click()}
+                        className="text-[#0f172a] text-[13px] font-semibold underline underline-offset-2"
+                      >
+                        Upload image
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setProductImageUrl("")}
+                        className="text-[#5c5f61] text-[12px] hover:text-[#0f172a] transition-colors text-left"
+                      >
+                        Remove image
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Thumbnail Color Picker */}
                 <div className="flex flex-col gap-2">
                   <label className="text-[#1c1b1b] text-[14px] font-semibold tracking-[0.28px]">Thumbnail Color</label>
@@ -252,6 +391,29 @@ export default function AddEditProductPage() {
                       />
                     ))}
                   </div>
+                </div>
+
+                {/* Lightspeed Item ID */}
+                <div className="flex flex-col gap-2">
+                  <label className="text-[#1c1b1b] text-[14px] font-semibold tracking-[0.28px]">Lightspeed Item ID</label>
+                  <input
+                    value={lightspeedItemId}
+                    onChange={(e) => setLightspeedItemId(e.target.value)}
+                    placeholder="e.g., LS-10024"
+                    className="w-full bg-white border border-[#e2e8f0] rounded-[8px] px-[13px] py-[13px] text-[16px] text-[#1c1b1b] placeholder:text-[#c4c7c8] focus:outline-none focus:border-[#0f172a] focus:ring-1 focus:ring-[#0f172a]/20 transition-all"
+                  />
+                </div>
+
+                {/* Description */}
+                <div className="flex flex-col gap-2">
+                  <label className="text-[#1c1b1b] text-[14px] font-semibold tracking-[0.28px]">Description</label>
+                  <textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    rows={4}
+                    placeholder="Add a short product description"
+                    className="w-full bg-white border border-[#e2e8f0] rounded-[8px] px-[13px] py-[13px] text-[16px] text-[#1c1b1b] placeholder:text-[#c4c7c8] focus:outline-none focus:border-[#0f172a] focus:ring-1 focus:ring-[#0f172a]/20 transition-all resize-none"
+                  />
                 </div>
               </div>
             </div>
@@ -303,17 +465,25 @@ export default function AddEditProductPage() {
                     {ingredients.map((ing, idx) => (
                       <tr key={ing.id} className={idx > 0 ? "border-t border-[#f1f5f9]" : ""}>
                         <td className="px-4 py-[15.5px] border-b border-[#f1f5f9]">
-                          <input
-                            value={ing.name}
-                            onChange={(e) => updateIngredient(ing.id, "name", e.target.value)}
-                            placeholder="Ingredient name"
-                            className="w-full text-[16px] text-[#1c1b1b] placeholder:text-[#c4c7c8] bg-transparent focus:outline-none focus:bg-[#f8fafc] rounded px-1 -mx-1 py-0.5"
-                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setActiveIngredientRowId(ing.id);
+                              setShowIngredientDrawer(true);
+                            }}
+                            className="w-full flex items-center justify-between gap-3 text-left rounded px-1 -mx-1 py-1.5 text-[16px] text-[#1c1b1b] hover:bg-[#f8fafc] transition-colors"
+                          >
+                            <span className={ing.name ? "text-[#1c1b1b]" : "text-[#c4c7c8]"}>{ing.name || "Select ingredient"}</span>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M6 9l6 6 6-6" />
+                            </svg>
+                          </button>
                         </td>
                         <td className="px-4 py-[15.5px] border-b border-[#f1f5f9]">
                           <input
                             type="number"
                             min="0"
+                            step="0.01"
                             value={ing.quantity}
                             onChange={(e) => updateIngredient(ing.id, "quantity", e.target.value)}
                             placeholder="0"
@@ -321,33 +491,16 @@ export default function AddEditProductPage() {
                           />
                         </td>
                         <td className="px-4 py-[15.5px] border-b border-[#f1f5f9]">
-                          <div className="relative">
-                            <select
-                              value={ing.unit}
-                              onChange={(e) => updateIngredient(ing.id, "unit", e.target.value)}
-                              className="w-full text-[16px] text-[#1c1b1b] bg-transparent focus:outline-none appearance-none pr-4 cursor-pointer"
-                            >
-                              {UNITS.map((u) => (
-                                <option key={u} value={u}>{u}</option>
-                              ))}
-                            </select>
-                            <svg className="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="1.8" strokeLinecap="round">
-                              <path d="M6 9l6 6 6-6" />
-                            </svg>
+                          <div className="text-[16px] text-[#1c1b1b] bg-transparent px-1 -mx-1 py-0.5">
+                            {ing.unit || "g"}
                           </div>
                         </td>
                         <td className="px-4 py-[15.5px] border-b border-[#f1f5f9] text-right">
                           <div className="flex items-center justify-end gap-1">
                             <span className="text-[#444748] text-[16px]">฿</span>
-                            <input
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              value={ing.cost}
-                              onChange={(e) => updateIngredient(ing.id, "cost", e.target.value)}
-                              placeholder="0.00"
-                              className="w-20 text-right text-[16px] text-[#1c1b1b] placeholder:text-[#c4c7c8] bg-transparent focus:outline-none focus:bg-[#f8fafc] rounded px-1 py-0.5"
-                            />
+                            <span className="min-w-[60px] text-right text-[16px] text-[#1c1b1b]">
+                              {(parseFloat(ing.cost) || 0).toFixed(2)}
+                            </span>
                           </div>
                         </td>
                         <td className="px-4 py-[12px] border-b border-[#f1f5f9] text-center">
@@ -398,6 +551,45 @@ export default function AddEditProductPage() {
           </motion.div>
         </div>
       </div>
+
+      {showIngredientDrawer && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(15,23,42,0.25)] p-4 backdrop-blur-[2px]" onClick={() => setShowIngredientDrawer(false)}>
+          <div className="w-full max-w-[540px] rounded-[16px] bg-white shadow-[0_20px_50px_-20px_rgba(15,23,42,0.35)] border border-[#e2e8f0] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="px-5 py-4 border-b border-[#f1f5f9] flex items-center justify-between">
+              <h3 className="text-[#0f172a] text-[22px] font-medium">Select Ingredient</h3>
+              <button type="button" onClick={() => setShowIngredientDrawer(false)} className="p-2 rounded-full hover:bg-gray-100 transition-colors">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                  <line x1="1" y1="1" x2="13" y2="13"/><line x1="13" y1="1" x2="1" y2="13"/>
+                </svg>
+              </button>
+            </div>
+
+            <div className="max-h-[420px] overflow-y-auto p-3">
+              {AVAILABLE_INGREDIENTS.map((ingredient) => (
+                <button
+                  key={ingredient.id}
+                  type="button"
+                  onClick={() => {
+                    if (activeIngredientRowId) {
+                      handleIngredientSelect(activeIngredientRowId, ingredient.id);
+                    }
+                  }}
+                  className="w-full flex items-center justify-between gap-3 rounded-[10px] px-3 py-3 text-left hover:bg-[#f8fafc] transition-colors border border-transparent hover:border-[#e2e8f0]"
+                >
+                  <div>
+                    <div className="text-[#1c1b1b] text-[15px] font-medium">{ingredient.name}</div>
+                    <div className="text-[#5c5f61] text-[12px] mt-0.5">{ingredient.unit}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-[#0f172a] text-[13px] font-medium">฿{ingredient.costPerBaseUnit.toFixed(2)}</div>
+                    <div className="text-[#5c5f61] text-[11px]">per {ingredient.unit}</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Cancel Confirm Dialog */}
       <ConfirmDialog

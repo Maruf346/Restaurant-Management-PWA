@@ -6,10 +6,12 @@ export interface Category {
 
 export interface RecipeIngredient {
   id: string;
+  ingredientId?: string;
   name: string;
   quantity: number;
   unit: string;
   cost: number;
+  costPerBaseUnit?: number;
 }
 
 export interface Product {
@@ -17,8 +19,11 @@ export interface Product {
   categoryId: string;
   name: string;
   sellingPrice: number;
+  description?: string;
+  lightspeedItemId?: string;
   ingredients: RecipeIngredient[];
   imageColor: string;
+  imageUrl?: string;
 }
 
 export function getProductFoodCost(p: Product): number {
