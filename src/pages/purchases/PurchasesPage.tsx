@@ -6,9 +6,11 @@ interface PurchaseEntry {
   id: string;
   ingredient: string;
   ingredientIcon: string;
+  supplierName: string;
   quantity: number;
   unit: string;
   purchasePrice: number;
+  unitCost: number;
   date: string;
 }
 
@@ -28,18 +30,18 @@ const INGREDIENT_OPTIONS = [
 ];
 
 const INITIAL_ENTRIES: PurchaseEntry[] = [
-  { id: "1", ingredient: "Rice Noodles (Premium)", ingredientIcon: "🍜", quantity: 50, unit: "kg", purchasePrice: 2500.0, date: "Oct 24, 2023" },
-  { id: "2", ingredient: "Black Tiger Shrimp", ingredientIcon: "🦐", quantity: 20, unit: "kg", purchasePrice: 8400.0, date: "Oct 23, 2023" },
-  { id: "3", ingredient: "Firm Tofu", ingredientIcon: "🫙", quantity: 500, unit: "units", purchasePrice: 1500.0, date: "Oct 22, 2023" },
-  { id: "4", ingredient: "Oyster Sauce (Gallon)", ingredientIcon: "🍶", quantity: 10, unit: "liters", purchasePrice: 1200.0, date: "Oct 20, 2023" },
-  { id: "5", ingredient: "Thai Basil", ingredientIcon: "🌿", quantity: 5, unit: "kg", purchasePrice: 450.0, date: "Oct 19, 2023" },
-  { id: "6", ingredient: "Bean Sprouts", ingredientIcon: "🌱", quantity: 15, unit: "kg", purchasePrice: 750.0, date: "Oct 18, 2023" },
-  { id: "7", ingredient: "Shrimp (Medium)", ingredientIcon: "🦐", quantity: 30, unit: "kg", purchasePrice: 16800.0, date: "Oct 17, 2023" },
-  { id: "8", ingredient: "Rice Noodles", ingredientIcon: "🍜", quantity: 100, unit: "kg", purchasePrice: 800.0, date: "Oct 16, 2023" },
-  { id: "9", ingredient: "Fish Sauce", ingredientIcon: "🐟", quantity: 20, unit: "liters", purchasePrice: 1600.0, date: "Oct 15, 2023" },
-  { id: "10", ingredient: "Palm Sugar", ingredientIcon: "🍬", quantity: 10, unit: "kg", purchasePrice: 650.0, date: "Oct 14, 2023" },
-  { id: "11", ingredient: "Tofu (Firm)", ingredientIcon: "🫙", quantity: 200, unit: "units", purchasePrice: 600.0, date: "Oct 13, 2023" },
-  { id: "12", ingredient: "Oyster Sauce", ingredientIcon: "🍶", quantity: 5, unit: "liters", purchasePrice: 400.0, date: "Oct 12, 2023" },
+  { id: "1", ingredient: "Rice Noodles (Premium)", ingredientIcon: "🍜", supplierName: "Golden Harvest Foods", quantity: 50, unit: "kg", purchasePrice: 2500.0, unitCost: 50, date: "Oct 24, 2023" },
+  { id: "2", ingredient: "Black Tiger Shrimp", ingredientIcon: "🦐", supplierName: "Aqua Prime Supplies", quantity: 20, unit: "kg", purchasePrice: 8400.0, unitCost: 420, date: "Oct 23, 2023" },
+  { id: "3", ingredient: "Firm Tofu", ingredientIcon: "🫙", supplierName: "Sunrise Tofu Co.", quantity: 500, unit: "units", purchasePrice: 1500.0, unitCost: 3, date: "Oct 22, 2023" },
+  { id: "4", ingredient: "Oyster Sauce (Gallon)", ingredientIcon: "🍶", supplierName: "Oriental Pantry", quantity: 10, unit: "liters", purchasePrice: 1200.0, unitCost: 120, date: "Oct 20, 2023" },
+  { id: "5", ingredient: "Thai Basil", ingredientIcon: "🌿", supplierName: "Herb & Leaf Market", quantity: 5, unit: "kg", purchasePrice: 450.0, unitCost: 90, date: "Oct 19, 2023" },
+  { id: "6", ingredient: "Bean Sprouts", ingredientIcon: "🌱", supplierName: "Fresh Valley Produce", quantity: 15, unit: "kg", purchasePrice: 750.0, unitCost: 50, date: "Oct 18, 2023" },
+  { id: "7", ingredient: "Shrimp (Medium)", ingredientIcon: "🦐", supplierName: "Aqua Prime Supplies", quantity: 30, unit: "kg", purchasePrice: 16800.0, unitCost: 560, date: "Oct 17, 2023" },
+  { id: "8", ingredient: "Rice Noodles", ingredientIcon: "🍜", supplierName: "Golden Harvest Foods", quantity: 100, unit: "kg", purchasePrice: 800.0, unitCost: 8, date: "Oct 16, 2023" },
+  { id: "9", ingredient: "Fish Sauce", ingredientIcon: "🐟", supplierName: "Coastal Harvest", quantity: 20, unit: "liters", purchasePrice: 1600.0, unitCost: 80, date: "Oct 15, 2023" },
+  { id: "10", ingredient: "Palm Sugar", ingredientIcon: "🍬", supplierName: "Green Grove Imports", quantity: 10, unit: "kg", purchasePrice: 650.0, unitCost: 65, date: "Oct 14, 2023" },
+  { id: "11", ingredient: "Tofu (Firm)", ingredientIcon: "🫙", supplierName: "Sunrise Tofu Co.", quantity: 200, unit: "units", purchasePrice: 600.0, unitCost: 3, date: "Oct 13, 2023" },
+  { id: "12", ingredient: "Oyster Sauce", ingredientIcon: "🍶", supplierName: "Oriental Pantry", quantity: 5, unit: "liters", purchasePrice: 400.0, unitCost: 80, date: "Oct 12, 2023" },
 ];
 
 const UNITS = ["kg", "g", "liters", "ml", "units", "pieces", "pack"];
@@ -54,10 +56,13 @@ function AddEntryModal({ onClose, onSave }: AddEntryModalProps) {
   const [ingredientSearch, setIngredientSearch] = useState("");
   const [selectedIngredient, setSelectedIngredient] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
+  const [supplierName, setSupplierName] = useState("");
   const [quantity, setQuantity] = useState("0.00");
   const [unit, setUnit] = useState("kg");
   const [purchasePrice, setPurchasePrice] = useState("0.00");
   const [date, setDate] = useState("");
+
+  const unitCost = Number(quantity) > 0 ? Number(purchasePrice) / Number(quantity) : 0;
 
   const filteredIngredients = INGREDIENT_OPTIONS.filter((ing) =>
     ing.name.toLowerCase().includes(ingredientSearch.toLowerCase())
@@ -78,9 +83,11 @@ function AddEntryModal({ onClose, onSave }: AddEntryModalProps) {
     onSave({
       ingredient: selectedIngredient,
       ingredientIcon: icon,
+      supplierName: supplierName.trim() || "Unknown supplier",
       quantity: parseFloat(quantity) || 0,
       unit,
       purchasePrice: parseFloat(purchasePrice) || 0,
+      unitCost: Number(unitCost.toFixed(2)),
       date: formattedDate,
     });
   };
@@ -165,7 +172,16 @@ function AddEntryModal({ onClose, onSave }: AddEntryModalProps) {
             </div>
           </div>
 
-          {/* Quantity + Unit */}
+          <div className="flex flex-col gap-2">
+            <label className="text-[#444748] text-[14px] font-semibold tracking-[0.28px]">Supplier Name</label>
+            <input
+              value={supplierName}
+              onChange={(e) => setSupplierName(e.target.value)}
+              placeholder="e.g., Golden Harvest Foods"
+              className="w-full bg-white border border-[#6b7280] rounded-[8px] px-[13px] py-[11px] text-[16px] text-[#1c1b1b] placeholder:text-[#c4c7c8] focus:outline-none focus:border-[#0f172a] focus:ring-1 focus:ring-[#0f172a]/20 transition-all"
+            />
+          </div>
+
           <div className="flex gap-4">
             <div className="flex flex-col gap-2 flex-[2]">
               <label className="text-[#444748] text-[14px] font-semibold tracking-[0.28px]">Purchase Quantity</label>
@@ -196,12 +212,11 @@ function AddEntryModal({ onClose, onSave }: AddEntryModalProps) {
             </div>
           </div>
 
-          {/* Purchase Price + Date */}
           <div className="flex gap-4">
             <div className="flex flex-col gap-2 flex-1">
               <label className="text-[#444748] text-[14px] font-semibold tracking-[0.28px]">Purchase Price</label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#747878] text-[16px]">$</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#747878] text-[16px]">฿</span>
                 <input
                   type="number"
                   step="0.01"
@@ -225,6 +240,11 @@ function AddEntryModal({ onClose, onSave }: AddEntryModalProps) {
                 />
               </div>
             </div>
+          </div>
+
+          <div className="rounded-[10px] border border-[#e2e8f0] bg-[#f8fafc] p-3">
+            <p className="text-[11px] font-medium uppercase tracking-[0.6px] text-[#444748]">Auto-calculated unit cost</p>
+            <p className="text-[#1c1b1b] text-[20px] font-semibold mt-1">฿ {Number(unitCost || 0).toFixed(2)} / {unit || "unit"}</p>
           </div>
         </div>
 
@@ -395,8 +415,10 @@ export default function PurchasesPage() {
               <thead>
                 <tr className="bg-[#f8fafc] border-b border-[#f1f5f9]">
                   <th className="text-left px-4 py-3 text-[#444748] text-[14px] font-semibold tracking-[0.28px] whitespace-nowrap">Ingredient</th>
+                  <th className="text-left px-4 py-3 text-[#444748] text-[14px] font-semibold tracking-[0.28px] whitespace-nowrap">Supplier</th>
                   <th className="text-right px-4 py-3 text-[#444748] text-[14px] font-semibold tracking-[0.28px] whitespace-nowrap">Purchase Quantity</th>
                   <th className="text-right px-4 py-3 text-[#444748] text-[14px] font-semibold tracking-[0.28px] whitespace-nowrap">Purchase Price</th>
+                  <th className="text-right px-4 py-3 text-[#444748] text-[14px] font-semibold tracking-[0.28px] whitespace-nowrap">Unit Cost</th>
                   <th className="text-right px-4 py-3 text-[#444748] text-[14px] font-semibold tracking-[0.28px] whitespace-nowrap">Date</th>
                 </tr>
               </thead>
@@ -408,7 +430,7 @@ export default function PurchasesPage() {
               >
                 {paginated.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="text-center py-16 text-[#5c5f61] text-[14px]">
+                    <td colSpan={6} className="text-center py-16 text-[#5c5f61] text-[14px]">
                       {search ? `No entries matching "${search}"` : "No purchase entries yet."}
                     </td>
                   </tr>
@@ -426,11 +448,17 @@ export default function PurchasesPage() {
                           <span className="text-[#1c1b1b] text-[14px] font-medium leading-[21px]">{entry.ingredient}</span>
                         </div>
                       </td>
+                      <td className="px-4 py-[18px] text-left text-[#444748] text-[14px] leading-[21px]">
+                        {entry.supplierName}
+                      </td>
                       <td className="px-4 py-[18px] text-right text-[#1c1b1b] text-[14px] leading-[21px]">
                         {entry.quantity} {entry.unit}
                       </td>
                       <td className="px-4 py-[18px] text-right text-[#1c1b1b] text-[14px] leading-[21px]">
                         {formatPrice(entry.purchasePrice)}
+                      </td>
+                      <td className="px-4 py-[18px] text-right text-[#1c1b1b] text-[14px] leading-[21px]">
+                        {formatPrice(entry.unitCost)}
                       </td>
                       <td className="px-4 py-[18px] text-right text-[#444748] text-[14px] leading-[21px]">
                         {entry.date}

@@ -10,6 +10,7 @@ import AddEditProductPage from "./pages/inventory/AddEditProductPage";
 import PlaceholderPage from "./pages/PlaceholderPage";
 import SettingsPage from "./pages/settings/SettingsPage";
 import IngredientsPage from "./pages/ingredients/IngredientsPage";
+import IngredientDetailPage from "./pages/ingredients/IngredientDetailPage";
 import PurchasesPage from "./pages/purchases/PurchasesPage";
 import ProfitabilityPage from "./pages/profitability/ProfitabilityPage";
 import ReportsPage from "./pages/reports/ReportsPage";
@@ -62,6 +63,7 @@ export default function App() {
           <Route path="inventory/:productId" element={<ProductDetailPage />} />
           <Route path="inventory/:productId/edit" element={<AddEditProductPage />} />
           <Route path="ingredients" element={<IngredientsPage />} />
+          <Route path="ingredients/:ingredientId" element={<IngredientDetailPage />} />
           <Route path="purchases" element={<PurchasesPage />} />
           <Route path="profitability" element={<ProfitabilityPage />} />
           <Route path="reports" element={<ReportsPage />} />

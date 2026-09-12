@@ -1,8 +1,9 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import Toast, { useToast } from "../../components/ui/Toast";
 
-interface Ingredient {
+export interface Ingredient {
   id: string;
   name: string;
   unit: string;
@@ -13,7 +14,7 @@ interface Ingredient {
   minStockAlert: number;
 }
 
-const INITIAL_INGREDIENTS: Ingredient[] = [
+export const INITIAL_INGREDIENTS: Ingredient[] = [
   { id: "1", name: "Rice Noodles", unit: "g", purchasePrice: 0.08, costPerBaseUnit: 0.08, supplierName: "Golden Harvest Foods", currentStock: 15000, minStockAlert: 2000 },
   { id: "2", name: "Shrimp (Medium)", unit: "kg", purchasePrice: 560.0, costPerBaseUnit: 560.0, supplierName: "Aqua Prime Supplies", currentStock: 12.5, minStockAlert: 2 },
   { id: "3", name: "Tofu (Firm)", unit: "g", purchasePrice: 0.14, costPerBaseUnit: 0.14, supplierName: "Sunrise Tofu Co.", currentStock: 5000, minStockAlert: 500 },
@@ -43,7 +44,7 @@ function IngredientModal({ initial, onClose, onSave }: IngredientModalProps) {
   const [purchasePrice, setPurchasePrice] = useState(initial?.purchasePrice.toString() ?? "0.00");
   const [costPerBaseUnit, setCostPerBaseUnit] = useState(initial?.costPerBaseUnit.toString() ?? "0.00");
   const [supplierName, setSupplierName] = useState(initial?.supplierName ?? "");
-  const [currentStock, setCurrentStock] = useState(initial?.currentStock.toString() ?? "0");
+  const [currentStock] = useState(initial?.currentStock.toString() ?? "0");
   const [minStockAlert, setMinStockAlert] = useState(initial?.minStockAlert.toString() ?? "0");
 
   const isEdit = Boolean(initial);
@@ -181,8 +182,9 @@ function IngredientModal({ initial, onClose, onSave }: IngredientModalProps) {
                 type="number"
                 step="0.01"
                 value={currentStock}
-                onChange={(e) => setCurrentStock(e.target.value)}
-                className="w-full bg-white border border-[#6b7280] rounded-[8px] px-[13px] py-[11px] text-[16px] text-[#1c1b1b] focus:outline-none focus:border-[#0f172a] focus:ring-1 focus:ring-[#0f172a]/20 transition-all"
+                readOnly
+                aria-readonly="true"
+                className="w-full bg-[#f8fafc] border border-[#e2e8f0] rounded-[8px] px-[13px] py-[11px] text-[16px] text-[#1c1b1b] cursor-not-allowed opacity-80"
               />
             </div>
             <div className="flex flex-col gap-2 flex-1">
@@ -232,6 +234,7 @@ export default function IngredientsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [showModal, setShowModal] = useState(false);
   const [editingIngredient, setEditingIngredient] = useState<Ingredient | null>(null);
+  const navigate = useNavigate();
   const { toasts, addToast, dismiss } = useToast();
 
   const filtered = ingredients.filter((ing) =>
@@ -336,14 +339,15 @@ export default function IngredientsPage() {
                   paginated.map((ing) => (
                     <tr
                       key={ing.id}
-                      className="border-t border-[#f1f5f9] hover:bg-[#fafafa] transition-colors"
+                      onClick={() => navigate(`/ingredients/${ing.id}`)}
+                      className="border-t border-[#f1f5f9] hover:bg-[#fafafa] transition-colors cursor-pointer"
                     >
                       <td className="px-6 py-[18px] text-[#1c1b1b] text-[16px] font-medium">{ing.name}</td>
                       <td className="px-6 py-[18px] text-[#444748] text-[16px]">{ing.unit}</td>
                       <td className="px-6 py-[18px] text-[#444748] text-[16px]">{ing.supplierName}</td>
                       <td className="px-6 py-[18px] text-[#1c1b1b] text-[16px] text-right">{formatPrice(ing.costPerBaseUnit)}</td>
                       <td className="px-6 py-[18px] text-[#1c1b1b] text-[16px] text-right">{formatStock(ing.currentStock)}</td>
-                      <td className="px-6 py-[16.5px] text-center">
+                      <td className="px-6 py-[16.5px] text-center" onClick={(e) => e.stopPropagation()}>
                         <button
                           onClick={() => setEditingIngredient(ing)}
                           className="border border-[#e2e8f0] text-[#5c5f61] text-[12px] font-medium rounded-[6px] px-[13px] py-[7px] hover:bg-gray-50 hover:border-[#cbd5e1] transition-colors"
