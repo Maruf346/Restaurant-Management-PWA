@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useInventoryStore } from "../../stores/inventoryStore";
@@ -140,6 +140,12 @@ export default function InventoryPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [deletingProductId, setDeletingProductId] = useState<string | null>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+  const categoryRowRef = useRef<HTMLDivElement | null>(null);
+  const isDraggingRef = useRef(false);
+  const dragStartXRef = useRef(0);
+  const dragStartScrollLeftRef = useRef(0);
 
   const filtered = products.filter((p) => p.categoryId === activeCategory);
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
@@ -148,10 +154,76 @@ export default function InventoryPage() {
   const start = filtered.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
   const end = Math.min(currentPage * PAGE_SIZE, filtered.length);
 
+  const updateCategoryScrollState = () => {
+    const el = categoryRowRef.current;
+    if (!el) {
+      setCanScrollLeft(false);
+      setCanScrollRight(false);
+      return;
+    }
+
+    const maxScrollLeft = el.scrollWidth - el.clientWidth;
+    setCanScrollLeft(el.scrollLeft > 8);
+    setCanScrollRight(el.scrollLeft < maxScrollLeft - 8);
+  };
+
+  const handleScrollCategory = (direction: "prev" | "next") => {
+    const el = categoryRowRef.current;
+    if (!el) return;
+    const delta = Math.max(el.clientWidth * 0.7, 120);
+    el.scrollBy({ left: direction === "next" ? delta : -delta, behavior: "smooth" });
+  };
+
+  const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    const el = categoryRowRef.current;
+    if (!el) return;
+
+    const target = event.target as HTMLElement;
+    if (target.closest("button") || target.closest("a")) {
+      return;
+    }
+
+    isDraggingRef.current = true;
+    dragStartXRef.current = event.clientX;
+    dragStartScrollLeftRef.current = el.scrollLeft;
+    el.setPointerCapture(event.pointerId);
+  };
+
+  const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    const el = categoryRowRef.current;
+    if (!el || !isDraggingRef.current) return;
+    const delta = event.clientX - dragStartXRef.current;
+    el.scrollLeft = dragStartScrollLeftRef.current - delta;
+  };
+
+  const handlePointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
+    const el = categoryRowRef.current;
+    if (!el) return;
+    isDraggingRef.current = false;
+    el.releasePointerCapture(event.pointerId);
+    updateCategoryScrollState();
+  };
+
   const handleCategoryChange = (id: string) => {
     setActiveCategory(id);
     setCurrentPage(1);
   };
+
+  useEffect(() => {
+    if (categories.length === 0) {
+      setActiveCategory("");
+      setCurrentPage(1);
+      return;
+    }
+
+    if (!categories.some((cat) => cat.id === activeCategory)) {
+      setActiveCategory(categories[0].id);
+      setCurrentPage(1);
+      return;
+    }
+
+    updateCategoryScrollState();
+  }, [categories, activeCategory]);
 
   const handleAddCategory = (name: string) => {
     addCategory(name);
@@ -218,29 +290,68 @@ export default function InventoryPage() {
 
             {/* Category Tabs */}
             <div className="bg-[rgba(255,255,255,0.8)] backdrop-blur-[10px] border-b border-[#f1f5f9] pb-px">
-              <div className="flex items-center gap-6 px-[10px] pt-3 pb-0 overflow-x-auto">
-                {categories.map((cat) => (
-                  <button
-                    key={cat.id}
-                    onClick={() => handleCategoryChange(cat.id)}
-                    className="relative pb-[10px] flex-shrink-0 transition-colors"
+              <div className="flex items-center gap-2 px-[10px] pt-3 pb-0">
+                <div className="flex items-center min-w-0 flex-1">
+                  <div
+                    ref={categoryRowRef}
+                    className="flex items-center gap-6 overflow-x-auto scrollbar-none touch-pan-x select-none w-full rounded-[8px]"
+                    onPointerDown={handlePointerDown}
+                    onPointerMove={handlePointerMove}
+                    onPointerUp={handlePointerUp}
+                    onPointerLeave={handlePointerUp}
+                    style={{ scrollBehavior: "smooth" }}
                   >
-                    <span
-                      className={`text-[14px] font-semibold tracking-[0.28px] transition-colors ${
-                        activeCategory === cat.id ? "text-[#0f172a]" : "text-[#5c5f61] hover:text-[#1c1b1b]"
-                      }`}
+                    {categories.map((cat) => (
+                      <button
+                        key={cat.id}
+                        onClick={() => handleCategoryChange(cat.id)}
+                        className="relative pb-[10px] flex-shrink-0 transition-colors"
+                      >
+                        <span
+                          className={`text-[14px] font-semibold tracking-[0.28px] transition-colors ${
+                            activeCategory === cat.id ? "text-[#0f172a]" : "text-[#5c5f61] hover:text-[#1c1b1b]"
+                          }`}
+                        >
+                          {cat.name}
+                        </span>
+                        {activeCategory === cat.id && (
+                          <motion.div
+                            layoutId="tab-underline"
+                            className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#0f172a] rounded-full"
+                            transition={{ type: "spring", stiffness: 500, damping: 40 }}
+                          />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {(canScrollLeft || canScrollRight) && (
+                  <div className="flex items-center gap-1 pl-1">
+                    <button
+                      type="button"
+                      onClick={() => handleScrollCategory("prev")}
+                      disabled={!canScrollLeft}
+                      className="w-8 h-8 rounded-[6px] border border-[#e2e8f0] bg-white text-[#1c1b1b] flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
+                      aria-label="Previous categories"
                     >
-                      {cat.name}
-                    </span>
-                    {activeCategory === cat.id && (
-                      <motion.div
-                        layoutId="tab-underline"
-                        className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#0f172a] rounded-full"
-                        transition={{ type: "spring", stiffness: 500, damping: 40 }}
-                      />
-                    )}
-                  </button>
-                ))}
+                      <svg width="10" height="10" viewBox="0 0 6 10" fill="none">
+                        <path d="M5 1L1 5L5 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleScrollCategory("next")}
+                      disabled={!canScrollRight}
+                      className="w-8 h-8 rounded-[6px] border border-[#e2e8f0] bg-white text-[#1c1b1b] flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
+                      aria-label="Next categories"
+                    >
+                      <svg width="10" height="10" viewBox="0 0 6 10" fill="none">
+                        <path d="M1 1L5 5L1 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
