@@ -7,23 +7,25 @@ interface Ingredient {
   name: string;
   unit: string;
   purchasePrice: number;
+  costPerBaseUnit: number;
+  supplierName: string;
   currentStock: number;
   minStockAlert: number;
 }
 
 const INITIAL_INGREDIENTS: Ingredient[] = [
-  { id: "1", name: "Rice Noodles", unit: "g", purchasePrice: 0.08, currentStock: 15000, minStockAlert: 2000 },
-  { id: "2", name: "Shrimp (Medium)", unit: "kg", purchasePrice: 560.0, currentStock: 12.5, minStockAlert: 2 },
-  { id: "3", name: "Tofu (Firm)", unit: "g", purchasePrice: 0.14, currentStock: 5000, minStockAlert: 500 },
-  { id: "4", name: "Bean Sprouts", unit: "kg", purchasePrice: 50.0, currentStock: 8.0, minStockAlert: 1 },
-  { id: "5", name: "Thai Basil", unit: "kg", purchasePrice: 90.0, currentStock: 3.5, minStockAlert: 0.5 },
-  { id: "6", name: "Oyster Sauce", unit: "liters", purchasePrice: 120.0, currentStock: 10, minStockAlert: 2 },
-  { id: "7", name: "Palm Sugar", unit: "kg", purchasePrice: 65.0, currentStock: 6.0, minStockAlert: 1 },
-  { id: "8", name: "Fish Sauce", unit: "liters", purchasePrice: 80.0, currentStock: 8.5, minStockAlert: 1 },
-  { id: "9", name: "Galangal", unit: "kg", purchasePrice: 180.0, currentStock: 2.0, minStockAlert: 0.5 },
-  { id: "10", name: "Lemongrass", unit: "kg", purchasePrice: 120.0, currentStock: 4.5, minStockAlert: 0.5 },
-  { id: "11", name: "Kaffir Lime Leaves", unit: "g", purchasePrice: 0.5, currentStock: 800, minStockAlert: 100 },
-  { id: "12", name: "Coconut Milk", unit: "liters", purchasePrice: 45.0, currentStock: 20, minStockAlert: 5 },
+  { id: "1", name: "Rice Noodles", unit: "g", purchasePrice: 0.08, costPerBaseUnit: 0.08, supplierName: "Golden Harvest Foods", currentStock: 15000, minStockAlert: 2000 },
+  { id: "2", name: "Shrimp (Medium)", unit: "kg", purchasePrice: 560.0, costPerBaseUnit: 560.0, supplierName: "Aqua Prime Supplies", currentStock: 12.5, minStockAlert: 2 },
+  { id: "3", name: "Tofu (Firm)", unit: "g", purchasePrice: 0.14, costPerBaseUnit: 0.14, supplierName: "Sunrise Tofu Co.", currentStock: 5000, minStockAlert: 500 },
+  { id: "4", name: "Bean Sprouts", unit: "kg", purchasePrice: 50.0, costPerBaseUnit: 50.0, supplierName: "Fresh Valley Produce", currentStock: 8.0, minStockAlert: 1 },
+  { id: "5", name: "Thai Basil", unit: "kg", purchasePrice: 90.0, costPerBaseUnit: 90.0, supplierName: "Herb & Leaf Market", currentStock: 3.5, minStockAlert: 0.5 },
+  { id: "6", name: "Oyster Sauce", unit: "liters", purchasePrice: 120.0, costPerBaseUnit: 120.0, supplierName: "Oriental Pantry", currentStock: 10, minStockAlert: 2 },
+  { id: "7", name: "Palm Sugar", unit: "kg", purchasePrice: 65.0, costPerBaseUnit: 65.0, supplierName: "Green Grove Imports", currentStock: 6.0, minStockAlert: 1 },
+  { id: "8", name: "Fish Sauce", unit: "liters", purchasePrice: 80.0, costPerBaseUnit: 80.0, supplierName: "Coastal Harvest", currentStock: 8.5, minStockAlert: 1 },
+  { id: "9", name: "Galangal", unit: "kg", purchasePrice: 180.0, costPerBaseUnit: 180.0, supplierName: "Tropical Root Supply", currentStock: 2.0, minStockAlert: 0.5 },
+  { id: "10", name: "Lemongrass", unit: "kg", purchasePrice: 120.0, costPerBaseUnit: 120.0, supplierName: "Fresh Valley Produce", currentStock: 4.5, minStockAlert: 0.5 },
+  { id: "11", name: "Kaffir Lime Leaves", unit: "g", purchasePrice: 0.5, costPerBaseUnit: 0.5, supplierName: "Tropical Root Supply", currentStock: 800, minStockAlert: 100 },
+  { id: "12", name: "Coconut Milk", unit: "liters", purchasePrice: 45.0, costPerBaseUnit: 45.0, supplierName: "Pacific Food Group", currentStock: 20, minStockAlert: 5 },
 ];
 
 const UNITS = ["g", "kg", "liters", "ml", "units", "pieces", "pack"];
@@ -39,6 +41,8 @@ function IngredientModal({ initial, onClose, onSave }: IngredientModalProps) {
   const [name, setName] = useState(initial?.name ?? "");
   const [unit, setUnit] = useState(initial?.unit ?? "kg");
   const [purchasePrice, setPurchasePrice] = useState(initial?.purchasePrice.toString() ?? "0.00");
+  const [costPerBaseUnit, setCostPerBaseUnit] = useState(initial?.costPerBaseUnit.toString() ?? "0.00");
+  const [supplierName, setSupplierName] = useState(initial?.supplierName ?? "");
   const [currentStock, setCurrentStock] = useState(initial?.currentStock.toString() ?? "0");
   const [minStockAlert, setMinStockAlert] = useState(initial?.minStockAlert.toString() ?? "0");
 
@@ -50,6 +54,8 @@ function IngredientModal({ initial, onClose, onSave }: IngredientModalProps) {
       name: name.trim(),
       unit,
       purchasePrice: parseFloat(purchasePrice) || 0,
+      costPerBaseUnit: parseFloat(costPerBaseUnit) || 0,
+      supplierName: supplierName.trim() || "Unassigned",
       currentStock: parseFloat(currentStock) || 0,
       minStockAlert: parseFloat(minStockAlert) || 0,
     });
@@ -135,6 +141,32 @@ function IngredientModal({ initial, onClose, onSave }: IngredientModalProps) {
                   step="0.01"
                   value={purchasePrice}
                   onChange={(e) => setPurchasePrice(e.target.value)}
+                  className="w-full bg-white border border-[#6b7280] rounded-[8px] pl-[28px] pr-[13px] py-[11px] text-[16px] text-[#1c1b1b] focus:outline-none focus:border-[#0f172a] focus:ring-1 focus:ring-[#0f172a]/20 transition-all"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Supplier + Cost per Base Unit */}
+          <div className="flex gap-4">
+            <div className="flex flex-col gap-2 flex-1">
+              <label className="text-[#444748] text-[14px] font-semibold tracking-[0.28px]">Supplier Name</label>
+              <input
+                value={supplierName}
+                onChange={(e) => setSupplierName(e.target.value)}
+                placeholder="e.g., Golden Harvest Foods"
+                className="w-full bg-white border border-[#6b7280] rounded-[8px] px-[13px] py-[11px] text-[16px] text-[#1c1b1b] placeholder:text-[#c4c7c8] focus:outline-none focus:border-[#0f172a] focus:ring-1 focus:ring-[#0f172a]/20 transition-all"
+              />
+            </div>
+            <div className="flex flex-col gap-2 flex-1">
+              <label className="text-[#444748] text-[14px] font-semibold tracking-[0.28px]">Cost per Base Unit</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#747878] text-[16px]">฿</span>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={costPerBaseUnit}
+                  onChange={(e) => setCostPerBaseUnit(e.target.value)}
                   className="w-full bg-white border border-[#6b7280] rounded-[8px] pl-[28px] pr-[13px] py-[11px] text-[16px] text-[#1c1b1b] focus:outline-none focus:border-[#0f172a] focus:ring-1 focus:ring-[#0f172a]/20 transition-all"
                 />
               </div>
@@ -282,7 +314,8 @@ export default function IngredientsPage() {
                 <tr className="bg-[#f8fafc] border-b border-[#f1f5f9]">
                   <th className="text-left px-6 py-3 text-[#444748] text-[12px] font-medium tracking-[0.6px] uppercase whitespace-nowrap">INGREDIENT NAME</th>
                   <th className="text-left px-6 py-3 text-[#444748] text-[12px] font-medium tracking-[0.6px] uppercase whitespace-nowrap">UNIT</th>
-                  <th className="text-right px-6 py-3 text-[#444748] text-[12px] font-medium tracking-[0.6px] uppercase whitespace-nowrap">PURCHASE PRICE</th>
+                  <th className="text-left px-6 py-3 text-[#444748] text-[12px] font-medium tracking-[0.6px] uppercase whitespace-nowrap">SUPPLIER</th>
+                  <th className="text-right px-6 py-3 text-[#444748] text-[12px] font-medium tracking-[0.6px] uppercase whitespace-nowrap">COST / BASE UNIT</th>
                   <th className="text-right px-6 py-3 text-[#444748] text-[12px] font-medium tracking-[0.6px] uppercase whitespace-nowrap">CURRENT STOCK</th>
                   <th className="text-center px-6 py-3 text-[#444748] text-[12px] font-medium tracking-[0.6px] uppercase whitespace-nowrap">ACTIONS</th>
                 </tr>
@@ -295,7 +328,7 @@ export default function IngredientsPage() {
               >
                 {paginated.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="text-center py-16 text-[#5c5f61] text-[14px]">
+                    <td colSpan={6} className="text-center py-16 text-[#5c5f61] text-[14px]">
                       {search ? `No ingredients matching "${search}"` : "No ingredients yet."}
                     </td>
                   </tr>
@@ -307,7 +340,8 @@ export default function IngredientsPage() {
                     >
                       <td className="px-6 py-[18px] text-[#1c1b1b] text-[16px] font-medium">{ing.name}</td>
                       <td className="px-6 py-[18px] text-[#444748] text-[16px]">{ing.unit}</td>
-                      <td className="px-6 py-[18px] text-[#1c1b1b] text-[16px] text-right">{formatPrice(ing.purchasePrice)}</td>
+                      <td className="px-6 py-[18px] text-[#444748] text-[16px]">{ing.supplierName}</td>
+                      <td className="px-6 py-[18px] text-[#1c1b1b] text-[16px] text-right">{formatPrice(ing.costPerBaseUnit)}</td>
                       <td className="px-6 py-[18px] text-[#1c1b1b] text-[16px] text-right">{formatStock(ing.currentStock)}</td>
                       <td className="px-6 py-[16.5px] text-center">
                         <button
